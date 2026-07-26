@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>播放 - 剧搜</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo" onclick="location.href='index.html'">剧搜</div>
+  <div class="header-right">
+    <button class="login-btn" onclick="location.href='index.html'">← 返回首页</button>
+  </div>
+</header>
+
+<main class="play-page">
+  <div class="player-wrap">
+    <div class="video-box" id="videoBox">
+      <div class="placeholder" id="playPlaceholder" onclick="startPlay()">
+        <div class="big">▶</div>
+        <p id="playTitle">正在加载...</p>
+      </div>
+      <video id="videoPlayer" controls style="display:none"></video>
+    </div>
+  </div>
+
+  <div class="play-meta">
+    <div>
+      <h2 id="name"></h2>
+    </div>
+    <button class="back-btn" onclick="backDetail()">返回详情</button>
+  </div>
+
+  <section class="episode-section">
+    <h2>剧集列表</h2>
+    <div class="episode-grid" id="episodeList">
+      <div style="color:var(--muted);padding:10px">加载中...</div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="assets/js/data.js"></script>
+<script>
+(function(){
+  var movie = null, hls = null, currentUrl = "";
+  var history = JSON.parse(localStorage.getItem("history")||"[]");
+  var lastItem = history[0];
+  if (!lastItem) { document.getElementById("playTitle").innerText = "暂无播放记录"; return; }
+
+  getDramaDetail(lastItem.id, function(detail){
+    if (detail) { movie = detail; render(); }
+    else { document.getElementById("playTitle").innerText = "获取播放信息失败"; }
+  });
+
+  function render(){
+    document.getElementById("playTitle").innerText = movie.name;
+    document.getElementById("name").innerText = movie.name;
+
+    var box = document.getElementById("episodeList");
+    if (movie.episodeList && movie.episodeList.length > 0) {
+      box.innerHTML = movie.episodeList.map(function(ep,i){
+        return "<button onclick=\"playEpisode("+i+")\">"+ep.name+"</button>";
+      }).join("");
+      if (movie.episodeList[0].url) { currentUrl = movie.episodeList[0].url; }
+    } else if (movie.playUrl) {
+      box.innerHTML = "<button onclick=\"playEpisode(0)\" class=\"active\">播放</button>";
+      currentUrl = movie.playUrl;
+    } else {
+      box.innerHTML = "<div style=\"color:var(--muted);padding:10px\">暂无播放源</div>";
+    }
+  }
+
+  function setupPlayer(url){
+    if (!url) return;
+    var video = document.getElementById("videoPlayer");
+    var placeholder = document.getElementById("playPlaceholder");
+    video.style.display = "block";
+    placeholder.style.display = "none";
+    if (hls) { hls.destroy(); hls = null; }
+    var isM3u8 = url.indexOf(".m3u8") >= 0;
+    if (isM3u8 && typeof Hls !== "undefined" && Hls.isSupported()) {
+      hls = new Hls(); hls.loadSource(url); hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, function(){ video.play().catch(function(){}); });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = url; video.play().catch(function(){});
+    } else {
+      video.src = url; video.load();
+    }
+  }
+
+  window.playEpisode = function(idx){
+    if (!movie || !movie.episodeList || !movie.episodeList[idx]) return;
+    currentUrl = movie.episodeList[idx].url;
+    var btns = document.querySelectorAll(".episode-grid button");
+    btns.forEach(function(b,i){ b.classList.toggle("active",i===idx); });
+    setupPlayer(currentUrl);
+  };
+
+  window.startPlay = function(){ if (currentUrl) setupPlayer(currentUrl); };
+  window.backDetail = function(){
+    if (movie) { localStorage.setItem("detailId",movie.id); location.href="detail.html"; }
+    else { location.href="index.html"; }
+  };
+})();
+</script>
+</body>
+</html>

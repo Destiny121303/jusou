@@ -1,0 +1,16 @@
+﻿{
+  "name": "jusou",
+  "version": "1.0.0",
+  "description": "剧搜 - 热门短剧免费看平台",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["短剧", "视频", "剧搜"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

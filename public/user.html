@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>我的 - 剧搜</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo" onclick="location.href='index.html'">剧搜</div>
+  <div class="header-right">
+    <button class="login-btn" onclick="location.href='index.html'">← 返回首页</button>
+  </div>
+</header>
+
+<main class="user-page">
+  <section class="user-profile">
+    <div class="user-avatar" id="avatar">👤</div>
+    <h1 id="username">游客用户</h1>
+    <div class="user-level" id="vipLevel">普通会员</div>
+
+    <div class="user-menu-grid">
+      <div class="item" onclick="showFav()"><span>⭐</span><label>我的收藏</label></div>
+      <div class="item" onclick="showHist()"><span>🎬</span><label>播放记录</label></div>
+      <div class="item" onclick="buyVip()"><span>💎</span><label>VIP会员</label></div>
+      <div class="item" onclick="setting()"><span>⚙</span><label>账号设置</label></div>
+    </div>
+  </section>
+
+  <section class="user-vip">
+    <h2>👑 剧搜 VIP</h2>
+    <p>高清播放 · 无广告 · 专属内容</p>
+    <div class="vip-countdown" id="vipCountdown"></div>
+    <button onclick="buyVip()">立即升级</button>
+  </section>
+
+  <section class="user-section">
+    <h2>继续观看</h2>
+    <div class="user-grid" id="historyList"></div>
+  </section>
+
+  <section class="user-section">
+    <h2>我的收藏</h2>
+    <div class="user-grid" id="favoriteList"></div>
+  </section>
+<input type="file" id="qrFileInput" accept="image/*" style="display:none" onchange="handleQRUpload(this)">
+</main>
+
+<script src="assets/js/data.js"></script>
+<script>
+(function(){
+  var user = getUser();
+  document.getElementById("username").innerText = user.name;
+  document.getElementById("avatar").innerText = user.avatar || "👤";
+  if (user.vip) document.getElementById("vipLevel").innerText = "VIP会员";
+
+  function showGrid(id, list, empty){
+    var box = document.getElementById(id);
+    if (!box) return;
+    if (!list || !list.length) { box.innerHTML = "<p style=\"color:var(--muted);padding:10px\">"+empty+"</p>"; return; }
+    box.innerHTML = list.map(function(m){
+      return "<div class=\"item\" onclick=\"openDrama("+m.id+")\"><div class=\"thumb\">🎬</div><h3>"+(m.name||"未知")+"</h3></div>";
+    }).join("");
+  }
+
+  function showHist(){ showGrid("historyList", getHistory(), "暂无观看记录"); }
+  function showFav(){ showGrid("favoriteList", getFavorite(), "暂无收藏"); }
+
+  // VIP倒计时
+  var cdEl = document.getElementById("vipCountdown");
+  var vs = getVipStatus();
+  if (vs.active && cdEl) {
+    function tick() {
+      var c = getVipCountdown();
+      if (!c) { cdEl.innerHTML = "<span>已过期</span>"; return; }
+      cdEl.innerHTML =
+        "<div class=\"cd-block\"><span class=\"cd-num\">"+String(c.days).padStart(2,"0")+"</span><span class=\"cd-label\">天</span></div>" +
+        "<div class=\"cd-sep\">:</div>" +
+        "<div class=\"cd-block\"><span class=\"cd-num\">"+String(c.hours).padStart(2,"0")+"</span><span class=\"cd-label\">时</span></div>" +
+        "<div class=\"cd-sep\">:</div>" +
+        "<div class=\"cd-block\"><span class=\"cd-num\">"+String(c.mins).padStart(2,"0")+"</span><span class=\"cd-label\">分</span></div>" +
+        "<div class=\"cd-sep\">:</div>" +
+        "<div class=\"cd-block\"><span class=\"cd-num\">"+String(c.secs).padStart(2,"0")+"</span><span class=\"cd-label\">秒</span></div>" +
+        "<div class=\"cd-sep\">.</div>" +
+        "<div class=\"cd-block ms\"><span class=\"cd-num\">"+String(c.ms).padStart(3,"0")+"</span><span class=\"cd-label\">ms</span></div>";
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  } else if (cdEl) {
+    cdEl.innerHTML = "<span style=\"color:var(--muted);font-size:13px\">尚未开通VIP</span>";
+  }
+
+  window.showHist = showHist; window.showFav = showFav;
+  window.openDrama = function(id){ localStorage.setItem("detailId",id); location.href="detail.html"; };
+  window.buyVip = function(){
+    user.vip = true; saveUser(user);
+    document.getElementById("vipLevel").innerText = "VIP会员";
+    document.getElementById("vipSection").innerHTML = '<h2>👑 剧搜 VIP</h2><p>VIP会员 · 畅享所有特权</p><div class="vip-countdown" id="vipCountdown"></div><button onclick="buyVip()">管理会员</button>';
+    location.reload();
+  };
+  window.setting = function(){
+    var action = prompt("1. 修改昵称\n2. 上传收款二维码\n请输入编号(1或2):", "1");
+    if (action === "1") {
+      var n = prompt("请输入昵称", user.name);
+      if (n && n.trim()) { user.name = n.trim(); saveUser(user); document.getElementById("username").innerText = user.name; }
+    } else if (action === "2") {
+      document.getElementById("qrFileInput").click();
+    }
+  };
+  window.handleQRUpload = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      fetch("/api/qr",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({qr:e.target.result})}).then(function(r){return r.json()}).then(function(d){if(d.code==200)alert("✅ 收款码已保存到服务器！所有访客可见");else alert("保存失败:"+(d.error||"未知错误"))}).catch(function(){alert("上传失败，请确认服务器运行中")});
+    };
+    reader.readAsDataURL(file);
+    input.value = "";
+  };
+  showHist(); showFav();
+})();
+</script>
+</body>
+</html>
