@@ -433,6 +433,23 @@
       state.filter === "全部" ? "正在热播" : state.filter + "短剧";
     render();
   };
+  var hotTabs = document.querySelector(".hot-tabs");
+  if (hotTabs) {
+    hotTabs.onclick = function (event) {
+      var button = event.target.closest("[data-filter]");
+      if (!button) return;
+      state.filter = button.dataset.filter;
+      hotTabs.querySelectorAll("button").forEach(function (item) {
+        item.classList.toggle("active", item === button);
+      });
+      document.querySelectorAll("#filters [data-filter]").forEach(function (item) {
+        item.classList.toggle("active", item.dataset.filter === state.filter);
+      });
+      document.getElementById("resultTitle").textContent =
+        state.filter === "全部" ? "正在热播" : state.filter + "短剧";
+      render();
+    };
+  }
   more.onclick = async function () {
     if (state.busy) return;
     busy(true);
