@@ -34,6 +34,18 @@
       '<path d="m5 16-1 4 4-1L19 8l-3-3L5 16Z"/><path d="m13.8 7.2 3 3M4 4h7M4 8V4"/>',
     pulse:
       '<path d="M3 13h4l2-6 4 12 2-6h6"/><path d="M4 4h4M16 20h4"/>',
+    crown:
+      '<path d="m3 7 4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7Z"/><path d="M6 21h12M8 14h8"/>',
+    rocket:
+      '<path d="M14 4c3-2 5-1 6-1 0 1 1 3-1 6l-5 5-5-5 5-5Z"/><path d="m9 9-4 1-2 3 5 1m7-1-1 5-3 2-1-5"/><circle cx="15.5" cy="7.5" r="1.5"/>',
+    briefcase:
+      '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 12h18M10 12v3h4v-3"/>',
+    download:
+      '<path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 18v3h16v-3"/>',
+    check:
+      '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
+    shield:
+      '<path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
   };
 
   function icon(name) {

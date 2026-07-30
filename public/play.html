@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#020403">
   <title>播放｜剧搜</title>
-  <link rel="stylesheet" href="./assets/css/style.css?v=7">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.svg">
+  <link rel="preconnect" href="https://v.gsuus.com" crossorigin>
+  <link rel="stylesheet" href="./assets/css/style.css?v=8">
+  <link rel="stylesheet" href="./assets/css/product.css?v=8">
 </head>
 <body class="player-page">
   <header class="site-header">
@@ -14,8 +18,10 @@
   </header>
   <main class="player-shell">
     <section class="video-stage">
+      <div class="flow-border" aria-hidden="true"></div>
+      <div class="stage-aperture" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="player-ambient" id="ambient" aria-hidden="true"></div>
-      <video id="video" controls playsinline webkit-playsinline preload="metadata"></video>
+      <video id="video" controls playsinline webkit-playsinline preload="auto"></video>
       <div class="player-hud" aria-hidden="true">
         <i class="hud-corner tl"></i><i class="hud-corner tr"></i><i class="hud-corner bl"></i><i class="hud-corner br"></i>
         <div class="hud-top"><span class="hud-pill"><i></i><b id="hudStatus">SOURCE LINK</b></span><span class="hud-pill" id="hudEpisode">EP --</span></div>
@@ -32,9 +38,11 @@
       <div class="episode-list" id="episodes"></div>
     </section>
   </main>
-  <script src="./assets/js/hls.min.js?v=7"></script>
-  <script src="./assets/js/data.js?v=7"></script>
-  <script src="./assets/js/ui.js?v=7"></script>
+  <script src="./assets/js/hls.min.js?v=8"></script>
+  <script src="./assets/js/data.js?v=8"></script>
+  <script src="./assets/js/ui.js?v=8"></script>
+  <script src="./assets/js/shell.js?v=8"></script>
+  <script src="./assets/js/membership.js?v=8"></script>
   <script>
   (async function () {
     var query = new URLSearchParams(location.search);
@@ -122,8 +130,11 @@
         hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
-          backBufferLength: 30,
-          maxBufferLength: 30
+          backBufferLength: 15,
+          maxBufferLength: 18,
+          maxMaxBufferLength: 30,
+          startFragPrefetch: true,
+          capLevelToPlayerSize: true
         });
         hls.loadSource(episode.url);
         hls.attachMedia(video);

@@ -1,33 +1,42 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#09090b"><meta name="description" content="剧搜 — 发现当下值得追的热门短剧">
-  <title>剧搜｜好剧，马上看</title><link rel="stylesheet" href="./assets/css/style.css?v=7">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#09090b">
+  <meta name="description" content="剧搜｜发现当下值得追的热门短剧">
+  <title>剧搜｜好剧，马上看</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.svg">
+  <link rel="stylesheet" href="./assets/css/style.css?v=8">
+  <link rel="stylesheet" href="./assets/css/product.css?v=8">
 </head>
 <body>
   <a class="skip-link" href="#content">跳到主要内容</a>
   <header class="site-header">
-    <a class="brand" href="./" aria-label="剧搜首页"><span class="brand-mark">剧</span><span>剧搜</span></a>
-    <nav class="desktop-nav" aria-label="主导航"><a class="active" href="#discover">发现</a><a href="#library">剧库</a><a href="#ranking">热榜</a></nav>
+    <a class="brand" href="./index.html" aria-label="剧搜首页"><span class="brand-mark">剧</span><span>剧搜</span></a>
+    <nav class="desktop-nav" aria-label="主导航"><a class="active" href="./index.html">首页</a><a href="./explore.html">分类</a><a href="./membership.html">会员</a><a href="./business.html">商务</a><a href="./app.html">App</a></nav>
     <div class="header-actions"><button class="icon-button" id="themeToggle" data-icon="sun" type="button" aria-label="切换渐变主题"></button><a class="profile-button" data-icon="heart" href="./user.html"><span>我的片单</span><b id="favoriteCount">0</b></a></div>
   </header>
   <main id="content">
-    <section class="hero" id="discover">
-      <div class="hero-copy"><p class="eyebrow">JUSOU PICKS · 每日精选</p><h1>下一部上头短剧，<br><em>现在就找到。</em></h1><p class="hero-subtitle">聚合热门短剧，搜索、收藏、续播一次到位。少一点选择焦虑，多一点好戏开场。</p>
+    <section class="hero app-hero" id="discover">
+      <div class="hero-copy"><p class="eyebrow">JUSOU PICKS · 每日精选</p><h1>下一部上头短剧，<br><em>现在就找到。</em></h1><p class="hero-subtitle">聚合热门短剧，搜索、收藏、续播一次到位。更快的视频首帧，更准确的片名匹配。</p>
         <form class="hero-search" id="searchForm" role="search"><label class="sr-only" for="searchInput">搜索剧名、演员或类型</label><span>⌕</span><input id="searchInput" type="search" placeholder="搜索剧名、演员或类型…" autocomplete="off"><button type="submit">开始找剧</button></form>
         <div class="quick-tags"><span>大家在搜</span><button type="button" data-query="重生">重生</button><button type="button" data-query="甜宠">甜宠</button><button type="button" data-query="都市">都市</button><button type="button" data-query="古装">古装</button></div>
         <div class="mobile-metrics"><div><strong>12+</strong><span>今日上新</span></div><div><strong>4.9</strong><span>口碑精选</span></div><div><strong>HD</strong><span>高清片源</span></div></div>
       </div><aside class="hero-feature" id="heroFeature" aria-label="今日推荐"><div class="feature-skeleton"></div></aside>
     </section>
     <section class="continue-strip hidden" id="continueSection"><div><span class="section-kicker">接着看</span><h2 id="continueTitle">上次看到这里</h2></div><button class="primary-button" id="continueButton" type="button">继续播放 →</button></section>
+    <section class="content-section app-section"><div class="section-head"><div><span class="section-kicker">PRODUCT MATRIX</span><h2>剧搜，不只是播放器</h2></div></div><div class="bento-grid"><a class="bento-card" href="./explore.html"><b>01</b><span class="section-kicker">DISCOVERY</span><h3>完整分类找剧</h3><p>更多题材筛选、真实搜索与独立剧库界面。</p></a><a class="bento-card" href="./membership.html"><b>02</b><span class="section-kicker">PRIME</span><h3>会员中心</h3><p>权益方案、预约意向与未来账户能力。</p></a><a class="bento-card" href="./business.html"><b>03</b><span class="section-kicker">BUSINESS</span><h3>商务合作</h3><p>内容入驻、联合专题、品牌与渠道方案。</p></a><a class="bento-card" href="./app.html"><b>04</b><span class="section-kicker">APP</span><h3>安装与上架</h3><p>当前 PWA 安装与正式 App 发布路线。</p></a></div></section>
     <section class="content-section" id="library">
-      <div class="section-head"><div><span class="section-kicker">精选剧库</span><h2 id="resultTitle">正在热播</h2></div><button class="text-button hidden" id="clearSearch" type="button">清除搜索 ×</button></div>
+      <div class="section-head"><div><span class="section-kicker">精选剧库</span><h2 id="resultTitle">正在热播</h2></div><a class="text-button" href="./explore.html">更多分类 →</a><button class="text-button hidden" id="clearSearch" type="button">清除搜索 ×</button></div>
       <div class="filters" id="filters"><button class="active" data-filter="全部">全部</button><button data-filter="都市">都市</button><button data-filter="甜宠">甜宠</button><button data-filter="重生">重生</button><button data-filter="古装">古装</button><button data-filter="逆袭">逆袭</button></div>
       <div class="movie-grid" id="movieGrid" aria-live="polite"></div><div class="load-more-wrap"><button class="secondary-button" id="loadMore">加载更多</button></div>
     </section>
-    <section class="ranking-section" id="ranking"><div class="section-head"><div><span class="section-kicker">本周趋势</span><h2>热度飙升榜</h2></div></div><div class="ranking-grid" id="rankingGrid"></div></section>
+    <section class="ranking-section" id="ranking"><div class="section-head"><div><span class="section-kicker">VERTICAL TREND</span><h2>热度飙升榜</h2></div><a class="text-button" href="./explore.html">查看完整剧库 →</a></div><div class="ranking-grid vertical-ranking" id="rankingGrid"></div></section>
   </main>
-  <nav class="mobile-nav"><a class="active" data-icon="search" href="#discover"><span>发现</span></a><a data-icon="grid" href="#library"><span>剧库</span></a><a data-icon="trend" href="#ranking"><span>热榜</span></a><a data-icon="user" href="./user.html"><span>我的</span></a></nav>
-  <div class="toast" id="toast" role="status"></div><script src="./assets/js/data.js?v=7"></script><script src="./assets/js/ui.js?v=7"></script><script src="./assets/js/app.js?v=7"></script>
-</body></html>
+  <nav class="mobile-nav" aria-label="移动导航"><a class="active" href="./index.html" data-icon="home"><span>首页</span></a><a href="./explore.html" data-icon="search"><span>分类</span></a><a href="./membership.html" data-icon="crown"><span>会员</span></a><a href="./app.html" data-icon="rocket"><span>App</span></a><a href="./user.html" data-icon="user"><span>我的</span></a></nav>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="./assets/js/data.js?v=8"></script><script src="./assets/js/ui.js?v=8"></script><script src="./assets/js/shell.js?v=8"></script><script src="./assets/js/app.js?v=8"></script>
+</body>
+</html>

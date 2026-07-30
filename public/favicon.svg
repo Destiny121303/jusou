@@ -1,6 +1,12 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF"/>
-<path d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8"/>
-<path d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/>
-<path d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="18" y1="12" x2="110" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d7ff44"/>
+      <stop offset="1" stop-color="#20f29a"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="34" fill="#050807"/>
+  <rect x="7" y="7" width="114" height="114" rx="29" fill="url(#g)"/>
+  <path d="M27 23h22v7H34v17h-7V23Zm52 0h22v24h-7V30H79v-7ZM27 81h7v17h15v7H27V81Zm67 0h7v24H79v-7h15V81Z" fill="#06140c" opacity=".5"/>
+  <text x="64" y="82" text-anchor="middle" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="58" font-weight="900" fill="#06140c">剧</text>
 </svg>
