@@ -1,4 +1,4 @@
-const CACHE="jusou-v8";
+const CACHE="jusou-v9";
 const CORE=["./","./index.html","./explore.html","./membership.html","./business.html","./app.html","./user.html","./assets/css/style.css","./assets/css/product.css","./assets/js/data.js","./assets/js/ui.js","./assets/js/shell.js","./favicon.svg"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
