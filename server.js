@@ -1,174 +1,151 @@
-﻿const express = require("express");
-const fs = require("fs");
+const express = require("express");
 const path = require("path");
 const https = require("https");
-const http = require("http");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
+const API = { hostname: "api.guangsuapi.com", path: "/api.php/provide/vod/at/json", typeId: 31 };
+const stores = { home: new Map(), list: new Map(), search: new Map(), detail: new Map() };
+const TTL = 5 * 60 * 1000;
 
-const API_SOURCE = { host: "api.guangsuapi.com", basePath: "/api.php/provide/vod/at/json", shortTypeId: 31, dramaTypeId: 13 };
+app.disable("x-powered-by");
+app.use(express.json({ limit: "1mb" }));
 
-const cache = { list: {}, detail: {}, search: {}, types: null, home: {} };
-const CACHE_TTL = 5 * 60 * 1000;
+function cached(store, key) {
+  const item = stores[store].get(key);
+  if (!item || Date.now() - item.time > TTL) return null;
+  return item.data;
+}
 
-function cacheGet(store, key) { const entry = cache[store][key]; if (entry && Date.now() - entry.time < CACHE_TTL) return entry.data; return null; }
-function cacheSet(store, key, data) { cache[store][key] = { data, time: Date.now() }; }
+function remember(store, key, data) {
+  stores[store].set(key, { time: Date.now(), data });
+  return data;
+}
 
-function fetchApi(path, query) {
+function fetchSource(query) {
   return new Promise((resolve, reject) => {
-    const qs = query ? "?" + query : "";
-    const options = { hostname: API_SOURCE.host, path: API_SOURCE.basePath + qs, method: "GET", timeout: 15000, headers: { "User-Agent": "Mozilla/5.0" } };
-    const req = https.get(options, (res) => {
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => { try { resolve(JSON.parse(data)); } catch (e) { reject(new Error("JSON parse error: " + e.message)); } });
+    const req = https.get({
+      hostname: API.hostname,
+      path: `${API.path}?${query}`,
+      timeout: 12000,
+      headers: { "User-Agent": "Jusou/2.0", Accept: "application/json" }
+    }, (response) => {
+      let body = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => { body += chunk; });
+      response.on("end", () => {
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          return reject(new Error(`上游服务返回 ${response.statusCode}`));
+        }
+        try { resolve(JSON.parse(body)); } catch { reject(new Error("上游数据格式异常")); }
+      });
     });
+    req.on("timeout", () => req.destroy(new Error("上游服务超时")));
     req.on("error", reject);
-    req.on("timeout", () => { req.destroy(); reject(new Error("timeout")); });
   });
 }
 
-function transformItem(item) {
-  let episodes = [];
-  if (item.vod_play_url) {
-    const sources = item.vod_play_url.split("$$$");
-    const primary = sources.length > 1 ? sources[1] : sources[0];
-    if (primary) {
-      episodes = primary.split("#").map((seg) => {
-        const sep = seg.indexOf("$");
-        if (sep > 0) return { name: seg.slice(0, sep), url: seg.slice(sep + 1) };
-        return { name: "播放", url: seg };
-      });
-    }
-  }
+function normalize(item = {}) {
+  const sources = String(item.vod_play_url || "").split("$$$").filter(Boolean);
+  const selected = sources.find((source) => source.includes(".m3u8")) || sources[0] || "";
+  const episodeList = selected.split("#").filter(Boolean).map((segment, index) => {
+    const splitAt = segment.indexOf("$");
+    return splitAt > -1
+      ? { name: segment.slice(0, splitAt) || `第${index + 1}集`, url: segment.slice(splitAt + 1) }
+      : { name: `第${index + 1}集`, url: segment };
+  }).filter((episode) => /^https?:\/\//i.test(episode.url));
+
   return {
-    id: item.vod_id, name: item.vod_name || "未知剧集", type: item.type_name || "短剧",
-    actor: item.vod_actor || "未知演员", score: parseFloat(item.vod_score) || 0,
-    hot: Math.floor(Math.random() * 500) + 100, vip: false, episodes: episodes.length || 1,
-    cover: item.vod_pic || "", intro: item.vod_content || item.vod_blurb || "精彩短剧，每日更新。",
-    year: item.vod_year || "", area: item.vod_area || "", remarks: item.vod_remarks || "",
-    playUrl: episodes.length > 0 ? episodes[0].url : "", episodeList: episodes,
-    rawUrl: item.vod_play_url || "", playFrom: item.vod_play_from || "",
+    id: String(item.vod_id || ""),
+    name: item.vod_name || "未命名短剧",
+    type: item.type_name || "短剧",
+    actor: item.vod_actor || "演员信息待更新",
+    director: item.vod_director || "",
+    score: Number.parseFloat(item.vod_score) || 0,
+    hot: Number(item.vod_hits || item.vod_hits_day) || 0,
+    cover: item.vod_pic || "",
+    intro: String(item.vod_content || item.vod_blurb || "暂无剧情简介。").replace(/<[^>]*>/g, "").trim(),
+    year: item.vod_year || "近期",
+    area: item.vod_area || "中国大陆",
+    remarks: item.vod_remarks || (episodeList.length ? `全${episodeList.length}集` : "热播中"),
+    episodeList,
+    playUrl: episodeList[0]?.url || ""
   };
 }
 
-// favicon
-app.get("/favicon.ico", function(req,res){res.set("Content-Type","image/svg+xml");res.send("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><rect width=\"32\" height=\"32\" rx=\"6\" fill=\"#ff2050\"/><text x=\"16\" y=\"22\" text-anchor=\"middle\" fill=\"white\" font-size=\"20\" font-weight=\"bold\">剧</text></svg>")});
+async function getList(page, limit) {
+  const key = `${page}:${limit}`;
+  const hit = cached("list", key);
+  if (hit) return hit;
+  const data = await fetchSource(`ac=list&t=${API.typeId}&pg=${page}&limit=${limit}`);
+  const base = Array.isArray(data.list) ? data.list : [];
+  const result = {
+    code: 200,
+    total: Number(data.total) || base.length,
+    page: Number(data.page) || page,
+    pageCount: Number(data.pagecount) || 1,
+    list: base.map(normalize)
+  };
+  return remember("list", key, result);
+}
 
-// 首页 - 先取列表再补详情（拿封面）
-app.get("/api/home", async (req, res) => {
-  var cached = cacheGet("home", "main");
-  if (cached) return res.json(cached);
+app.get("/api/health", (_req, res) => res.json({ ok: true, service: "剧搜" }));
+
+app.get("/api/home", async (_req, res, next) => {
   try {
-    var data = await fetchApi("", "ac=list&t=" + API_SOURCE.shortTypeId + "&pg=1&limit=20");
-    if (!data || !data.list) return res.json({code:200,total:0,list:[]});
-    var items = data.list.slice(0, 12);
-    var detailPromises = items.map(function(item) {
-      return fetchApi("", "ac=detail&ids=" + item.vod_id)
-        .then(function(d) { return d && d.list && d.list[0] ? d.list[0] : item; })
-        .catch(function() { return item; });
-    });
-    var enriched = await Promise.all(detailPromises);
-    var result = { code: 200, total: parseInt(data.total) || 0, list: enriched.map(transformItem) };
-    cacheSet("home", "main", result);
-    return res.json(result);
-  } catch (err) {
-    console.error("API home error:", err.message);
-    res.status(500).json({ error: "获取首页数据失败" });
-  }
+    const hit = cached("home", "main");
+    if (hit) return res.json(hit);
+    const list = await getList(1, 18);
+    const detailed = await Promise.all(list.list.slice(0, 12).map(async (item) => {
+      try {
+        const data = await fetchSource(`ac=detail&ids=${encodeURIComponent(item.id)}`);
+        return data.list?.[0] ? normalize(data.list[0]) : item;
+      } catch { return item; }
+    }));
+    res.json(remember("home", "main", { ...list, list: detailed }));
+  } catch (error) { next(error); }
 });
 
-    // 列表
-app.get("/api/list", async (req, res) => {
+app.get("/api/list", async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1; const limit = parseInt(req.query.limit) || 20;
-    const cacheKey = API_SOURCE.shortTypeId + "_" + page + "_" + limit;
-    const cached = cacheGet("list", cacheKey);
-    if (cached) return res.json(cached);
-
-    const data = await fetchApi("", "ac=list&t=" + API_SOURCE.shortTypeId + "&pg=" + page + "&limit=" + limit);
-    if (data && data.list) {
-      const result = { code: 200, total: parseInt(data.total) || 0, page: parseInt(data.page) || page, pageCount: parseInt(data.pagecount) || 1, list: data.list.map(transformItem) };
-      cacheSet("list", cacheKey, result);
-      return res.json(result);
-    }
-    res.json({ code: 200, total: 0, list: [] });
-  } catch (err) { console.error("API list error:", err.message); res.status(500).json({ error: "获取列表失败" }); }
+    const page = Math.max(1, Math.min(999, Number.parseInt(req.query.page, 10) || 1));
+    const limit = Math.max(1, Math.min(30, Number.parseInt(req.query.limit, 10) || 18));
+    res.json(await getList(page, limit));
+  } catch (error) { next(error); }
 });
 
-// 搜索
-app.get("/api/search", async (req, res) => {
+app.get("/api/search", async (req, res, next) => {
   try {
-    const keyword = (req.query.keyword || "").trim();
-    if (!keyword) return res.json({ code: 200, total: 0, list: [] });
-    const cached = cacheGet("search", keyword);
-    if (cached) return res.json(cached);
-    const data = await fetchApi("", "ac=list&wd=" + encodeURIComponent(keyword) + "&limit=30");
-    if (data && data.list) {
-      const result = { code: 200, total: parseInt(data.total) || 0, list: data.list.map(transformItem) };
-      cacheSet("search", keyword, result);
-      return res.json(result);
-    }
-    res.json({ code: 200, total: 0, list: [] });
-  } catch (err) { console.error("API search error:", err.message); res.status(500).json({ error: "搜索失败" }); }
+    const keyword = String(req.query.keyword || "").trim().slice(0, 50);
+    if (!keyword) return res.status(400).json({ error: "请输入搜索关键词" });
+    const hit = cached("search", keyword);
+    if (hit) return res.json(hit);
+    const data = await fetchSource(`ac=list&wd=${encodeURIComponent(keyword)}&limit=30`);
+    const result = { code: 200, total: Number(data.total) || 0, list: (data.list || []).map(normalize) };
+    res.json(remember("search", keyword, result));
+  } catch (error) { next(error); }
 });
 
-// 详情
-app.get("/api/detail", async (req, res) => {
+app.get("/api/detail", async (req, res, next) => {
   try {
-    const id = req.query.id; if (!id) return res.status(400).json({ error: "缺少id参数" });
-    const cached = cacheGet("detail", id); if (cached) return res.json(cached);
-    const data = await fetchApi("", "ac=detail&ids=" + id);
-    if (data && data.list && data.list.length > 0) {
-      const result = { code: 200, data: transformItem(data.list[0]) };
-      cacheSet("detail", id, result);
-      return res.json(result);
-    }
-    res.status(404).json({ error: "未找到" });
-  } catch (err) { console.error("API detail error:", err.message); res.status(500).json({ error: "获取详情失败" }); }
+    const id = String(req.query.id || "").trim();
+    if (!/^\d+$/.test(id)) return res.status(400).json({ error: "无效的剧集编号" });
+    const hit = cached("detail", id);
+    if (hit) return res.json(hit);
+    const data = await fetchSource(`ac=detail&ids=${encodeURIComponent(id)}`);
+    if (!data.list?.[0]) return res.status(404).json({ error: "未找到该短剧" });
+    res.json(remember("detail", id, { code: 200, data: normalize(data.list[0]) }));
+  } catch (error) { next(error); }
 });
 
-// 分类
-app.get("/api/types", async (req, res) => {
-  try { if (cache.types) return res.json(cache.types); const data = await fetchApi("", "ac=class"); cache.types = data; res.json(data); }
-  catch (err) { res.status(500).json({ error: "获取分类失败" }); }
+app.use(express.static(PUBLIC_DIR, { maxAge: "1h", extensions: ["html"] }));
+app.get("/", (_req, res) => res.sendFile(path.join(PUBLIC_DIR, "index.html")));
+app.use("/api", (_req, res) => res.status(404).json({ error: "接口不存在" }));
+app.use((_req, res) => res.status(404).sendFile(path.join(PUBLIC_DIR, "index.html")));
+app.use((error, _req, res, _next) => {
+  console.error(error.message);
+  res.status(502).json({ error: "内容服务暂时不可用，请稍后重试" });
 });
 
-
-// body-parser
-app.use(express.json({limit:"10mb"}));
-app.use(express.urlencoded({limit:"10mb",extended:true}));
-
-// QR码上传/获取
-app.post("/api/qr", function(req, res) {
-  try {
-    var data = req.body && req.body.qr;
-    if (!data) return res.status(400).json({error:"缺少qr数据"});
-    // 保存base64到文件
-    fs.writeFileSync(path.join(__dirname, "data", "qr.txt"), data, "utf8");
-    res.json({code:200,msg:"收款码已更新"});
-  } catch(e) {
-    res.status(500).json({error:e.message});
-  }
-});
-
-app.get("/api/qr", function(req, res) {
-  try {
-    var qrFile = path.join(__dirname, "data", "qr.txt");
-    if (fs.existsSync(qrFile)) {
-      var data = fs.readFileSync(qrFile, "utf8");
-      return res.json({code:200,qr:data});
-    }
-    res.json({code:200,qr:""});
-  } catch(e) {
-    res.status(500).json({error:e.message});
-  }
-});
-
-app.use(express.static(PUBLIC_DIR));
-app.use((req, res) => { res.status(404).sendFile(path.join(PUBLIC_DIR, "index.html")); });
-app.use((err, req, res, next) => { console.error("服务器错误:", err.message); res.status(500).send("服务器内部错误"); });
-
-app.listen(PORT, () => { console.log("剧搜运行中：http://localhost:" + PORT); });
+app.listen(PORT, () => console.log(`剧搜已启动：http://localhost:${PORT}`));

@@ -1,234 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>剧搜 - 海量短剧免费看</title>
-<link rel="stylesheet" href="assets/css/style.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#09090b"><meta name="description" content="剧搜 — 发现当下值得追的热门短剧">
+  <title>剧搜｜好剧，马上看</title><link rel="stylesheet" href="/assets/css/style.css?v=4">
 </head>
 <body>
-
-<div class="intro-loader" id="introLoader">
-  <div class="bg-glow"></div>
-  <div class="hex-ring"></div><div class="hex-ring"></div><div class="hex-ring"></div>
-  <div class="particles"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-  <div class="logo-box">
-    <div class="main-logo">剧搜</div>
-    <div class="arc"></div>
-    <div class="sub">海量短剧 · 免费畅看</div>
-  </div>
-  <div class="loader-bar"></div>
-</div>
-
-<header class="header">
-  <div class="logo">剧搜</div>
-  <nav class="nav">
-    <a class="active" href="index.html">首页</a>
-    <a href="javascript:;" onclick="scrollToEl('trending')">热门</a>
-    <a href="javascript:;" onclick="scrollToEl('newReleases')">新剧</a>
-    <a href="javascript:;" onclick="scrollToEl('ranking')">排行</a>
-  </nav>
-  <div class="header-right">
-    <button class="login-btn" id="loginBtn">登录</button>
-    <div class="vip-mascot" id="vipMascot" onclick="openVip()" title="开通VIP">
-      <div class="mascot-body">🐱</div>
-      <div class="mascot-tag">VIP</div>
-    </div>
-    <span style="font-size:22px;cursor:pointer" onclick="location.href='user.html'">👤</span>
-  </div>
-</header>
-
-<main class="home-page">
-
-<!-- 搜索栏 -->
-<div class="search-section">
-  <div class="search-row">
-    <input id="searchInput" placeholder="搜片名、演员、类型..." onkeydown="if(event.key==='Enter')doSearch(this.value.trim())">
-    <button onclick="doSearch(document.getElementById('searchInput').value.trim())">搜索</button>
-  </div>
-  <div class="hot-tags">
-    <em>🔥</em>
-    <a onclick="quickSearch('霸道总裁')">霸道总裁</a>
-    <a onclick="quickSearch('甜宠')">甜宠</a>
-    <a onclick="quickSearch('重生')">重生</a>
-    <a onclick="quickSearch('穿越')">穿越</a>
-    <a onclick="quickSearch('虐恋')">虐恋</a>
-    <a onclick="quickSearch('都市')">都市</a>
-  </div>
-</div>
-
-<!-- Hero Banner -->
-<section class="hero" id="hero">
-  <div class="hero-bg">
-    <div class="hero-content">
-      <span class="hero-tag">🔥 热门推荐</span>
-      <h1>海量短剧<br>免费畅看</h1>
-      <p>每日更新 · 高清画质 · 全站免费</p>
-      <div class="hero-actions">
-        <button class="btn-primary" onclick='scrollToEl("trending")'>立即观看</button>
-        <button class="btn-ghost" onclick='scrollToEl("ranking")'>排行榜</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 继续观看 -->
-<section class="content-row" id="continueRow" style="display:none">
-  <div class="row-header"><h2>▶ 继续观看</h2></div>
-  <div class="row-scroll" id="continueBox"></div>
-</section>
-
-<!-- 热门 -->
-<section class="content-row" id="trending">
-  <div class="row-header">
-    <h2>🔥 热门短剧</h2>
-    <div class="row-controls">
-      <span class="filter-chip active" onclick="filterBy('全部','trending')">全部</span>
-      <span class="filter-chip" onclick="filterBy('霸道总裁','trending')">霸总</span>
-      <span class="filter-chip" onclick="filterBy('甜宠','trending')">甜宠</span>
-      <span class="filter-chip" onclick="filterBy('重生','trending')">重生</span>
-      <span class="filter-chip" onclick="filterBy('穿越','trending')">穿越</span>
-    </div>
-  </div>
-  <div class="movie-grid" id="hotMovies">
-    <div class="loading-pulse"></div>
-  </div>
-</section>
-
-<!-- 最新上线 -->
-<section class="content-row" id="newReleases">
-  <div class="row-header"><h2>🆕 最新上线</h2><a href="javascript:;" onclick="clearSearch()">查看全部 →</a></div>
-  <div class="row-scroll" id="newMovies">
-    <div class="loading-pulse" style="width:100%"></div>
-  </div>
-</section>
-
-<!-- 热播排行 -->
-<section class="content-row" id="ranking">
-  <div class="row-header"><h2>🏆 热播排行</h2></div>
-  <div class="rank-list" id="rankList">
-    <div class="loading-pulse"></div>
-  </div>
-</section>
-
-<!-- 猜你喜欢 -->
-<section class="content-row">
-  <div class="row-header"><h2>💝 猜你喜欢</h2></div>
-  <div class="row-scroll" id="guessList">
-    <div class="loading-pulse" style="width:100%"></div>
-  </div>
-</section>
-
-<!-- 独家专区 -->
-<section class="content-row">
-  <div class="exclusive-card">
-    <div class="exclusive-content">
-      <span class="exclusive-tag">剧搜独家</span>
-      <h2>爆款短剧抢先看</h2>
-      <p>VIP会员提前解锁 · 热门内容每日更新</p>
-      <button onclick="openVip()">立即加入VIP</button>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer class="footer">
-  <div class="footer-col"><h4>剧搜</h4><p>热门短剧平台</p><p>海量内容每日更新</p></div>
-  <div class="footer-col"><h4>服务</h4><p>会员中心</p><p>帮助中心</p><p>意见反馈</p></div>
-  <div class="footer-col"><h4>关于</h4><p>用户协议</p><p>隐私政策</p><p>联系我们</p></div>
-  <div class="footer-bottom">&copy; 2026 剧搜短剧平台</div>
-</footer>
-
-<nav class="mobile-nav">
-  <a class="active" href="index.html"><span>🏠</span>首页</a>
-  <a href="javascript:;" onclick='scrollToEl("trending")'><span>🔥</span>热门</a>
-  <a href="javascript:;" onclick='scrollToEl("ranking")'><span>🏆</span>排行</a>
-  <a href="user.html"><span>👤</span>我的</a>
-</nav>
-
-<div class="mini-player" id="miniPlayer">
-  <span class="icon">🎬</span>
-  <div class="info"><h4>继续观看</h4><p id="miniTitle">暂无记录</p></div>
-  <button onclick="resumePlay()">▶</button>
-</div>
-
-<div class="toast" id="toast">操作成功</div>
-<button class="back-top" id="backTop">↑</button>
-
-<!-- VIP弹窗 -->
-<div class="modal" id="vipModal">
-  <div class="modal-box vip-modal-box">
-    <button class="modal-close" onclick="closeVip()">&times;</button>
-    <div class="vip-header">
-      <div class="vip-icon">👑</div>
-      <h2>剧搜VIP · 尊享特权</h2>
-      <p>海量短剧无广告畅看</p>
-    </div>
-    <div class="vip-benefits">
-      <div class="vip-benefit"><span>✅</span> 无广告纯净体验</div>
-      <div class="vip-benefit"><span>✅</span> 高清1080P画质</div>
-      <div class="vip-benefit"><span>✅</span> 抢先看独家短剧</div>
-      <div class="vip-benefit"><span>✅</span> 离线缓存下载</div>
-      <div class="vip-benefit"><span>✅</span> 专属VIP标识</div>
-    </div>
-    <div class="vip-plans-v2">
-      <div class="plan-card" data-plan="month" onclick="selectPlan(this)">
-        <div class="plan-name">月卡</div>
-        <div class="plan-price"><span class="currency">&yen;</span>19</div>
-        <div class="plan-duration">30天</div>
-        <div class="plan-perday">≈ &yen;0.63/天</div>
-        <button class="plan-btn">开通月卡</button>
-      </div>
-      <div class="plan-card featured" data-plan="year" onclick="selectPlan(this)">
-        <div class="plan-badge">🔥 最划算</div>
-        <div class="plan-name">年卡</div>
-        <div class="plan-price"><span class="currency">&yen;</span>199</div>
-        <div class="plan-duration">365天</div>
-        <div class="plan-perday">≈ &yen;0.55/天</div>
-        <button class="plan-btn">开通年卡</button>
-      </div>
-      <div class="plan-card" data-plan="quarter" onclick="selectPlan(this)">
-        <div class="plan-name">季卡</div>
-        <div class="plan-price"><span class="currency">&yen;</span>49</div>
-        <div class="plan-duration">90天</div>
-        <div class="plan-perday">≈ &yen;0.54/天</div>
-        <button class="plan-btn">开通季卡</button>
-      </div>
-    </div>
-    <div class="vip-footer">
-      <span>💳 支付方式：</span>
-      <span class="pay-icon">微信支付</span>
-      <span class="pay-icon">支付宝</span>
-    </div>
-  </div>
-</div>
-    <button class="btn-vip-buy">立即开通</button>
-  </div>
-</div>
-
-<!-- 登录弹窗 -->
-<div class="modal" id="loginPanel">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeLogin()">&times;</button>
-    <h2>欢迎来到剧搜</h2>
-    <p>登录同步观看记录</p>
-    <input id="phone" placeholder="手机号">
-    <div class="code-row"><input id="code" placeholder="验证码"><button id="sendCode">获取</button></div>
-    <button id="loginSubmit" class="btn-login-submit">登录</button>
-  </div>
-</div>
-
-<script src="assets/js/data.js"></script>
-<script src="assets/js/app.js"></script>
-<script>
-function scrollToEl(id){var el=document.getElementById(id);if(el)el.scrollIntoView({behavior:"smooth",block:"start"})}
-function openVip(){var m=document.getElementById("vipModal");if(m)m.style.display="flex"}
-function closeVip(){var m=document.getElementById("vipModal");if(m)m.style.display="none"}
-function closeLogin(){var m=document.getElementById("loginPanel");if(m)m.style.display="none"}
-function resumePlay(){var h=JSON.parse(localStorage.getItem("history")||"[]");if(h.length)location.href="play.html"}
-function quickSearch(w){var i=document.getElementById("searchInput");if(i){i.value=w;doSearch(w)}}
-function filterBy(t,section){var chips=document.querySelectorAll(".filter-chip");chips.forEach(function(c){c.classList.toggle("active",c.innerText.trim()===t||c.innerText.trim()===t)});if(typeof window.filterCat==="function")window.filterCat(t)}
-</script>
-</body>
-</html>
+  <a class="skip-link" href="#content">跳到主要内容</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="剧搜首页"><span class="brand-mark">剧</span><span>剧搜</span></a>
+    <nav class="desktop-nav" aria-label="主导航"><a class="active" href="#discover">发现</a><a href="#library">剧库</a><a href="#ranking">热榜</a></nav>
+    <div class="header-actions"><button class="icon-button" id="themeToggle" type="button" aria-label="切换主题">☼</button><a class="profile-button" href="/user.html"><span>我的片单</span><b id="favoriteCount">0</b></a></div>
+  </header>
+  <main id="content">
+    <section class="hero" id="discover">
+      <div class="hero-copy"><p class="eyebrow">JUSOU PICKS · 每日精选</p><h1>下一部上头短剧，<br><em>现在就找到。</em></h1><p class="hero-subtitle">聚合热门短剧，搜索、收藏、续播一次到位。少一点选择焦虑，多一点好戏开场。</p>
+        <form class="hero-search" id="searchForm" role="search"><label class="sr-only" for="searchInput">搜索剧名、演员或类型</label><span>⌕</span><input id="searchInput" type="search" placeholder="搜索剧名、演员或类型…" autocomplete="off"><button type="submit">开始找剧</button></form>
+        <div class="quick-tags"><span>大家在搜</span><button type="button" data-query="重生">重生</button><button type="button" data-query="甜宠">甜宠</button><button type="button" data-query="都市">都市</button><button type="button" data-query="古装">古装</button></div>
+        <div class="mobile-metrics"><div><strong>12+</strong><span>今日上新</span></div><div><strong>4.9</strong><span>口碑精选</span></div><div><strong>HD</strong><span>高清片源</span></div></div>
+      </div><aside class="hero-feature" id="heroFeature" aria-label="今日推荐"><div class="feature-skeleton"></div></aside>
+    </section>
+    <section class="continue-strip hidden" id="continueSection"><div><span class="section-kicker">接着看</span><h2 id="continueTitle">上次看到这里</h2></div><button class="primary-button" id="continueButton" type="button">继续播放 →</button></section>
+    <section class="content-section" id="library">
+      <div class="section-head"><div><span class="section-kicker">精选剧库</span><h2 id="resultTitle">正在热播</h2></div><button class="text-button hidden" id="clearSearch" type="button">清除搜索 ×</button></div>
+      <div class="filters" id="filters"><button class="active" data-filter="全部">全部</button><button data-filter="都市">都市</button><button data-filter="甜宠">甜宠</button><button data-filter="重生">重生</button><button data-filter="古装">古装</button><button data-filter="逆袭">逆袭</button></div>
+      <div class="movie-grid" id="movieGrid" aria-live="polite"></div><div class="load-more-wrap"><button class="secondary-button" id="loadMore">加载更多</button></div>
+    </section>
+    <section class="ranking-section" id="ranking"><div class="section-head"><div><span class="section-kicker">本周趋势</span><h2>热度飙升榜</h2></div></div><div class="ranking-grid" id="rankingGrid"></div></section>
+  </main>
+  <nav class="mobile-nav"><a class="active" href="#discover">⌂<span>发现</span></a><a href="#library">▦<span>剧库</span></a><a href="#ranking">↗<span>热榜</span></a><a href="/user.html">○<span>我的</span></a></nav>
+  <div class="toast" id="toast" role="status"></div><script src="/assets/js/data.js?v=4"></script><script src="/assets/js/app.js?v=4"></script>
+</body></html>
