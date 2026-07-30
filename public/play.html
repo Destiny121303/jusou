@@ -1,9 +1,211 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>播放｜剧搜</title><link rel="stylesheet" href="./assets/css/style.css"></head>
-<body class="player-page"><header class="site-header"><a class="brand" href="./"><span class="brand-mark">剧</span><span>剧搜</span></a><div class="header-actions"><button class="profile-button" id="back">返回详情</button></div></header>
-<main class="player-shell"><section class="video-stage"><video id="video" controls playsinline preload="metadata"></video><button class="player-message" id="message" type="button"><b>正在准备播放…</b><span>请稍候</span></button></section><div class="player-title"><div><span class="section-kicker">正在播放</span><h1 id="title">加载中…</h1></div><button class="secondary-button" id="fav">♡ 收藏</button></div><section class="episode-panel"><div class="section-head"><div><span class="section-kicker">选集</span><h2>剧集列表</h2></div></div><div class="episode-list" id="episodes"></div></section></main>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script><script src="./assets/js/data.js?v=5"></script><script>
-(async function(){var q=new URLSearchParams(location.search),id=q.get("id"),current=Math.max(0,parseInt(q.get("episode")||"0")),movie,video=document.getElementById("video"),msg=document.getElementById("message"),hls;
-function showPlay(text,sub){msg.style.display="flex";msg.innerHTML="<b>"+text+"</b><span>"+sub+"</span>"}function tryPlay(){video.play().then(function(){msg.style.display="none"}).catch(function(){showPlay("▶ 点击开始播放","片源已就绪")})}
-function play(i){var ep=movie.episodeList&&movie.episodeList[i];current=i;Jusou.saveProgress(movie,i);document.querySelectorAll(".episode-list button").forEach(function(b,n){b.classList.toggle("active",n===i)});if(!ep||!ep.url){video.style.display="none";showPlay("该剧暂未提供可播放片源","你可以先收藏，稍后再来看");return}video.style.display="block";video.poster=movie.cover||"";showPlay("正在加载视频…","片源准备中");if(hls)hls.destroy();if(ep.url.indexOf(".m3u8")>-1&&window.Hls&&Hls.isSupported()){hls=new Hls({enableWorker:true});hls.loadSource(ep.url);hls.attachMedia(video);hls.on(Hls.Events.MANIFEST_PARSED,tryPlay);hls.on(Hls.Events.ERROR,function(_,d){if(d.fatal)showPlay("当前片源播放失败","请尝试其他剧集")})}else{video.src=ep.url;video.load();video.oncanplay=tryPlay;video.onerror=function(){showPlay("当前片源播放失败","请尝试其他剧集")}}}
-msg.onclick=function(){if(video.readyState>=2)tryPlay()};if(!id){location.href="/";return}try{movie=await Jusou.detail(id);document.title=movie.name+"｜剧搜";document.getElementById("title").textContent=movie.name;document.getElementById("back").onclick=function(){Jusou.openDetail(movie.id)};var fav=document.getElementById("fav");fav.textContent=Jusou.isFavorite(movie.id)?"♥ 已收藏":"♡ 收藏";fav.onclick=function(){var a=Jusou.toggleFavorite(movie);fav.textContent=a?"♥ 已收藏":"♡ 收藏"};var eps=movie.episodeList||[];document.getElementById("episodes").innerHTML=eps.length?eps.map(function(e,i){return'<button class="'+(i===current?"active":"")+'" data-index="'+i+'">'+(e.name||"第"+(i+1)+"集")+"</button>"}).join(""):'<p class="muted">暂无剧集信息</p>';document.getElementById("episodes").onclick=function(e){var b=e.target.closest("[data-index]");if(b)play(Number(b.dataset.index))};play(Math.min(current,Math.max(0,eps.length-1)))}catch{showPlay("播放信息加载失败","请返回首页稍后重试")}})();
-</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020403">
+  <title>播放｜剧搜</title>
+  <link rel="stylesheet" href="./assets/css/style.css?v=7">
+</head>
+<body class="player-page">
+  <header class="site-header">
+    <a class="brand" href="./"><span class="brand-mark">剧</span><span>剧搜</span></a>
+    <div class="header-actions"><button class="profile-button" id="back" data-icon="back">返回详情</button></div>
+  </header>
+  <main class="player-shell">
+    <section class="video-stage">
+      <div class="player-ambient" id="ambient" aria-hidden="true"></div>
+      <video id="video" controls playsinline webkit-playsinline preload="metadata"></video>
+      <div class="player-hud" aria-hidden="true">
+        <i class="hud-corner tl"></i><i class="hud-corner tr"></i><i class="hud-corner bl"></i><i class="hud-corner br"></i>
+        <div class="hud-top"><span class="hud-pill"><i></i><b id="hudStatus">SOURCE LINK</b></span><span class="hud-pill" id="hudEpisode">EP --</span></div>
+        <div class="hud-bottom"><span id="hudProtocol">HLS // ADAPTIVE</span><span class="hud-bars"><i></i><i></i><i></i><i></i></span></div>
+      </div>
+      <button class="player-message" id="message" data-icon="pulse" type="button"><b>正在准备播放…</b><span>正在建立片源链路</span></button>
+    </section>
+    <div class="player-title">
+      <div><span class="section-kicker">正在播放</span><h1 id="title">加载中…</h1></div>
+      <button class="secondary-button" id="fav" data-icon="heart">收藏</button>
+    </div>
+    <section class="episode-panel">
+      <div class="section-head"><div><span class="section-kicker">选集</span><h2>剧集列表</h2></div><small class="swipe-tip">播放器内左右滑动可切集</small></div>
+      <div class="episode-list" id="episodes"></div>
+    </section>
+  </main>
+  <script src="./assets/js/hls.min.js?v=7"></script>
+  <script src="./assets/js/data.js?v=7"></script>
+  <script src="./assets/js/ui.js?v=7"></script>
+  <script>
+  (async function () {
+    var query = new URLSearchParams(location.search);
+    var id = query.get("id");
+    var current = Math.max(0, parseInt(query.get("episode") || "0", 10));
+    var movie;
+    var video = document.getElementById("video");
+    var message = document.getElementById("message");
+    var hls;
+    var touchStart;
+
+    function showPlay(title, subtitle) {
+      message.style.display = "flex";
+      message.innerHTML = "<b>" + title + "</b><span>" + subtitle + "</span>";
+      document.getElementById("hudStatus").textContent = "LINK WAIT";
+    }
+
+    function ready() {
+      document.getElementById("hudStatus").textContent = "SIGNAL READY";
+      video.play().then(function () {
+        message.style.display = "none";
+        document.getElementById("hudStatus").textContent = "PLAYING";
+      }).catch(function () {
+        showPlay("点击开始播放", "片源已就绪");
+      });
+    }
+
+    function updateEpisode(index) {
+      document.querySelectorAll(".episode-list button").forEach(function (button, buttonIndex) {
+        button.classList.toggle("active", buttonIndex === index);
+      });
+      document.getElementById("hudEpisode").textContent =
+        "EP " + String(index + 1).padStart(2, "0");
+    }
+
+    function fatalError(data) {
+      if (!hls || !data || !data.fatal) return;
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        document.getElementById("hudStatus").textContent = "RECONNECT";
+        hls.startLoad();
+      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        document.getElementById("hudStatus").textContent = "RECOVER";
+        hls.recoverMediaError();
+      } else {
+        showPlay("当前片源播放失败", "请尝试其他剧集");
+        hls.destroy();
+      }
+    }
+
+    function play(index) {
+      var episodes = movie.episodeList || [];
+      var episode = episodes[index];
+      if (index < 0 || index >= episodes.length) return;
+      current = index;
+      Jusou.saveProgress(movie, index);
+      updateEpisode(index);
+      if (!episode || !episode.url) {
+        video.style.display = "none";
+        showPlay("该剧暂未提供可播放片源", "你可以先收藏，稍后再来看");
+        return;
+      }
+
+      video.style.display = "block";
+      video.poster = movie.cover || "";
+      showPlay("正在加载视频…", "正在建立安全播放链路");
+      document.getElementById("hudProtocol").textContent =
+        episode.url.indexOf(".m3u8") > -1 ? "HLS // ADAPTIVE" : "MEDIA // DIRECT";
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
+
+      if (
+        episode.url.indexOf(".m3u8") > -1 &&
+        video.canPlayType("application/vnd.apple.mpegurl")
+      ) {
+        video.src = episode.url;
+        video.load();
+        video.oncanplay = ready;
+      } else if (
+        episode.url.indexOf(".m3u8") > -1 &&
+        window.Hls &&
+        Hls.isSupported()
+      ) {
+        hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          backBufferLength: 30,
+          maxBufferLength: 30
+        });
+        hls.loadSource(episode.url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, ready);
+        hls.on(Hls.Events.ERROR, function (_event, data) {
+          fatalError(data);
+        });
+      } else {
+        video.src = episode.url;
+        video.load();
+        video.oncanplay = ready;
+        video.onerror = function () {
+          showPlay("当前片源播放失败", "请尝试其他剧集");
+        };
+      }
+    }
+
+    message.onclick = function () {
+      if (video.readyState >= 2) ready();
+    };
+    video.addEventListener("playing", function () {
+      message.style.display = "none";
+      document.getElementById("hudStatus").textContent = "PLAYING";
+    });
+    video.addEventListener("waiting", function () {
+      document.getElementById("hudStatus").textContent = "BUFFERING";
+    });
+    video.addEventListener("touchstart", function (event) {
+      var touch = event.changedTouches[0];
+      touchStart = { x: touch.clientX, y: touch.clientY };
+    }, { passive: true });
+    video.addEventListener("touchend", function (event) {
+      if (!touchStart) return;
+      var touch = event.changedTouches[0];
+      var dx = touch.clientX - touchStart.x;
+      var dy = touch.clientY - touchStart.y;
+      touchStart = null;
+      if (Math.abs(dx) < 62 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+      var next = dx < 0 ? current + 1 : current - 1;
+      if (next >= 0 && next < (movie.episodeList || []).length) {
+        if (navigator.vibrate) navigator.vibrate(12);
+        play(next);
+      }
+    }, { passive: true });
+
+    if (!id) {
+      location.href = "/";
+      return;
+    }
+    try {
+      movie = await Jusou.detail(id);
+      if (!movie) throw new Error("未找到内容");
+      document.title = movie.name + "｜剧搜";
+      document.getElementById("title").textContent = movie.name;
+      document.getElementById("ambient").style.backgroundImage =
+        movie.cover ? 'url("' + movie.cover + '")' : "";
+      document.getElementById("back").onclick = function () {
+        Jusou.openDetail(movie.id, document.querySelector(".video-stage"));
+      };
+      var favorite = document.getElementById("fav");
+      favorite.textContent = Jusou.isFavorite(movie.id) ? "已收藏" : "收藏";
+      favorite.onclick = function () {
+        var active = Jusou.toggleFavorite(movie);
+        favorite.textContent = active ? "已收藏" : "收藏";
+      };
+      var episodes = movie.episodeList || [];
+      document.getElementById("episodes").innerHTML = episodes.length
+        ? episodes.map(function (episode, index) {
+            return '<button class="' + (index === current ? "active" : "") +
+              '" data-index="' + index + '" data-icon="pulse">' +
+              (episode.name || "第" + (index + 1) + "集") + "</button>";
+          }).join("")
+        : '<p class="muted">暂无剧集信息</p>';
+      document.getElementById("episodes").onclick = function (event) {
+        var button = event.target.closest("[data-index]");
+        if (button) play(Number(button.dataset.index));
+      };
+      play(Math.min(current, Math.max(0, episodes.length - 1)));
+    } catch (_error) {
+      showPlay("播放信息加载失败", "请返回首页稍后重试");
+    }
+  })();
+  </script>
+</body>
+</html>

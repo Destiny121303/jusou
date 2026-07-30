@@ -1,20 +1,452 @@
-(function(){"use strict";
-var state={items:[],page:1,total:0,busy:false,query:"",filter:"全部"},grid=document.getElementById("movieGrid"),more=document.getElementById("loadMore");
-function esc(v){return String(v||"").replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-function tones(id){var c=[["#ff5a36","#7f1d1d"],["#a855f7","#312e81"],["#22c55e","#14532d"],["#38bdf8","#164e63"],["#fb7185","#831843"]];return c[String(id).split("").reduce(function(s,x){return s+x.charCodeAt(0)},0)%c.length]}
-function poster(x){if(x.cover)return'<img src="'+esc(x.cover)+'" alt="'+esc(x.name)+'海报" loading="lazy">';var t=tones(x.id);return'<div class="poster-fallback" style="--tone:'+t[0]+';--shade:'+t[1]+'"><span>剧搜</span><strong>'+esc(x.name)+'</strong></div>'}
-function card(x){return'<article class="movie-card" tabindex="0" data-id="'+esc(x.id)+'"><div class="card-poster">'+poster(x)+'<span class="card-badge">'+esc(x.remarks||"热播中")+'</span><button class="favorite-button '+(Jusou.isFavorite(x.id)?"active":"")+'" data-favorite="'+esc(x.id)+'" aria-label="收藏">♥</button><div class="card-hover"><button data-play="'+esc(x.id)+'">▶ 立即播放</button></div></div><div class="card-copy"><h3>'+esc(x.name)+'</h3><p><span>'+esc(x.type)+'</span><span>'+(x.score?Number(x.score).toFixed(1)+" 分":esc(x.year))+'</span></p></div></article>'}
-function render(){var a=state.filter==="全部"?state.items:state.items.filter(function(x){return(x.type||"").indexOf(state.filter)>-1});grid.innerHTML=a.length?a.map(card).join(""):'<div class="empty-state"><span>⌕</span><h3>暂时没有找到合适的短剧</h3><p>换个关键词，或浏览全部热播内容。</p></div>';more.classList.toggle("hidden",!!state.query||state.items.length>=state.total||state.filter!=="全部");document.getElementById("favoriteCount").textContent=Jusou.favorites().length}
-function skeleton(){grid.innerHTML=Array(8).fill('<div class="card-skeleton"><i></i><b></b><span></span></div>').join("")}
-function toast(s){var e=document.getElementById("toast");e.textContent=s;e.classList.add("show");clearTimeout(e.t);e.t=setTimeout(function(){e.classList.remove("show")},1800)}
-function busy(v){state.busy=v;more.disabled=v;more.textContent=v?"加载中…":"加载更多"}
-function feature(x){var deck=state.items.slice(0,5),slides=deck.map(function(m,i){return'<article class="deck-slide" data-id="'+esc(m.id)+'"><div class="deck-art">'+poster(m)+'</div><div class="deck-shine"></div><div class="deck-glass"><div><span>0'+(i+1)+' · '+esc(m.type)+'</span><b>'+(m.score?Number(m.score).toFixed(1):"NEW")+'</b></div><h2>'+esc(m.name)+'</h2><p>'+esc(m.remarks||m.year)+' · 为你精选</p><button data-play="'+esc(m.id)+'">▶ 立即播放</button></div></article>'}).join(""),dots=deck.map(function(_,i){return'<i class="'+(i===0?"active":"")+'"></i>'}).join("");document.getElementById("heroFeature").innerHTML='<div class="feature-orbit" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="feature-poster">'+poster(x)+'</div><div class="feature-info"><div><span>今日推荐 · '+esc(x.type)+'</span><strong>'+(x.score?Number(x.score).toFixed(1):"NEW")+'</strong></div><h2>'+esc(x.name)+'</h2><p>'+esc(x.intro||x.type)+'</p><div class="feature-progress"><span style="width:'+(x.score?Math.min(100,Number(x.score)*10):86)+'%"></span></div><button data-play="'+esc(x.id)+'">▶ 播放第一集</button></div><div class="mobile-deck-wrap"><div class="deck-top"><span>左右滑动探索</span><b>SWIPE →</b></div><div class="mobile-deck" id="mobileDeck">'+slides+'</div><div class="deck-dots" id="deckDots">'+dots+'</div></div>';var deckEl=document.getElementById("mobileDeck"),dotEls=document.querySelectorAll("#deckDots i"),ticking=false;if(deckEl)deckEl.addEventListener("scroll",function(){if(ticking)return;ticking=true;requestAnimationFrame(function(){var step=deckEl.clientWidth*.86+14,index=Math.max(0,Math.min(dotEls.length-1,Math.round(deckEl.scrollLeft/step)));dotEls.forEach(function(d,i){d.classList.toggle("active",i===index)});ticking=false})},{passive:true})}
-async function initial(){skeleton();busy(true);var r=await Jusou.home();state.items=r.list||[];state.total=r.total||state.items.length;render();if(state.items[0])feature(state.items[0]);document.getElementById("rankingGrid").innerHTML=state.items.slice(0,5).map(function(x,i){return'<button class="rank-card" data-id="'+esc(x.id)+'"><b>0'+(i+1)+'</b>'+poster(x)+'<span><strong>'+esc(x.name)+'</strong><small>'+esc(x.type)+' · '+esc(x.remarks)+'</small></span><i>↗</i></button>'}).join("");var h=Jusou.history();if(h[0]){document.getElementById("continueSection").classList.remove("hidden");document.getElementById("continueTitle").textContent=h[0].name+" · 第"+((h[0].episode||0)+1)+"集";document.getElementById("continueButton").onclick=function(){Jusou.openPlayer(h[0].id,h[0].episode)}}if(r.offline)toast("内容服务暂不可用，已展示精选内容");busy(false)}
-async function search(k){k=k.trim();if(!k)return clear();state.query=k;state.filter="全部";skeleton();busy(true);document.getElementById("resultTitle").textContent="“"+k+"”的搜索结果";document.getElementById("clearSearch").classList.remove("hidden");try{var r=await Jusou.search(k);state.items=r.list||[];state.total=state.items.length;render()}catch(e){state.items=[];render();toast(e.message||"搜索失败")}busy(false)}
-async function clear(){state.query="";state.filter="全部";state.page=1;document.getElementById("searchInput").value="";document.getElementById("resultTitle").textContent="正在热播";document.getElementById("clearSearch").classList.add("hidden");document.querySelectorAll("#filters button").forEach(function(b){b.classList.toggle("active",b.dataset.filter==="全部")});await initial()}
-document.addEventListener("click",function(e){var f=e.target.closest("[data-favorite]");if(f){e.stopPropagation();var x=state.items.find(function(m){return String(m.id)===f.dataset.favorite});if(x){var a=Jusou.toggleFavorite(x);toast(a?"已加入我的片单":"已取消收藏");render()}return}var p=e.target.closest("[data-play]");if(p)return Jusou.openPlayer(p.dataset.play,0);var d=e.target.closest("[data-id]");if(d)return Jusou.openDetail(d.dataset.id);var q=e.target.closest("[data-query]");if(q){document.getElementById("searchInput").value=q.dataset.query;search(q.dataset.query)}});
-grid.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("movie-card"))Jusou.openDetail(e.target.dataset.id)});
-document.getElementById("searchForm").addEventListener("submit",function(e){e.preventDefault();search(document.getElementById("searchInput").value)});document.getElementById("clearSearch").onclick=clear;
-document.getElementById("filters").onclick=function(e){var b=e.target.closest("[data-filter]");if(!b)return;state.filter=b.dataset.filter;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("active",x===b)});document.getElementById("resultTitle").textContent=state.filter==="全部"?"正在热播":state.filter+"短剧";render()};
-more.onclick=async function(){if(state.busy)return;busy(true);try{var r=await Jusou.list(++state.page);state.items=state.items.concat(r.list||[]);state.total=r.total||state.total;render()}catch{state.page--;toast("加载失败，请稍后重试")}busy(false)};
-var theme=document.getElementById("themeToggle");theme.onclick=function(){var l=document.documentElement.classList.toggle("light");localStorage.setItem("jusou:theme",l?"light":"dark");this.textContent=l?"☾":"☼"};if(localStorage.getItem("jusou:theme")==="light"){document.documentElement.classList.add("light");theme.textContent="☾"}initial()})();
+(function () {
+  "use strict";
+
+  var state = {
+    items: [],
+    page: 1,
+    total: 0,
+    busy: false,
+    query: "",
+    filter: "全部",
+  };
+  var grid = document.getElementById("movieGrid");
+  var more = document.getElementById("loadMore");
+
+  function esc(value) {
+    return String(value || "").replace(/[&<>"']/g, function (character) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[character];
+    });
+  }
+
+  function tones(id) {
+    var colors = [
+      ["#22e889", "#07351f"],
+      ["#28d8ff", "#082d48"],
+      ["#9c6cff", "#241647"],
+      ["#ff4fa3", "#48122e"],
+      ["#ffad32", "#412305"],
+    ];
+    var key = String(id)
+      .split("")
+      .reduce(function (sum, character) {
+        return sum + character.charCodeAt(0);
+      }, 0);
+    return colors[key % colors.length];
+  }
+
+  function poster(movie, eager) {
+    if (movie.cover) {
+      return (
+        '<img src="' +
+        esc(movie.cover) +
+        '" alt="' +
+        esc(movie.name) +
+        '海报" ' +
+        (eager ? 'fetchpriority="high"' : 'loading="lazy"') +
+        ">"
+      );
+    }
+    var tone = tones(movie.id);
+    return (
+      '<div class="poster-fallback" style="--tone:' +
+      tone[0] +
+      ";--shade:" +
+      tone[1] +
+      '"><span>剧搜</span><strong>' +
+      esc(movie.name) +
+      "</strong></div>"
+    );
+  }
+
+  function card(movie) {
+    return (
+      '<article class="movie-card" tabindex="0" data-id="' +
+      esc(movie.id) +
+      '">' +
+      '<div class="card-poster">' +
+      poster(movie) +
+      '<span class="card-badge">' +
+      esc(movie.remarks || "热播中") +
+      "</span>" +
+      '<button class="favorite-button ' +
+      (Jusou.isFavorite(movie.id) ? "active" : "") +
+      '" data-favorite="' +
+      esc(movie.id) +
+      '" data-icon="heart" aria-label="收藏"></button>' +
+      '<div class="card-hover"><button data-play="' +
+      esc(movie.id) +
+      '" data-icon="play">立即播放</button></div>' +
+      "</div>" +
+      '<div class="card-copy"><h3>' +
+      esc(movie.name) +
+      "</h3><p><span>" +
+      esc(movie.type) +
+      "</span><span>" +
+      (movie.score
+        ? Number(movie.score).toFixed(1) + " 分"
+        : esc(movie.year)) +
+      "</span></p></div></article>"
+    );
+  }
+
+  function visibleItems() {
+    return state.filter === "全部"
+      ? state.items
+      : state.items.filter(function (movie) {
+          return (movie.type || "").indexOf(state.filter) > -1;
+        });
+  }
+
+  function render() {
+    var items = visibleItems();
+    grid.innerHTML = items.length
+      ? items.map(card).join("")
+      : '<div class="empty-state"><span>⌕</span><h3>暂时没有找到合适的短剧</h3><p>换个关键词，或浏览全部热播内容。</p></div>';
+    more.classList.toggle(
+      "hidden",
+      !!state.query ||
+        state.items.length >= state.total ||
+        state.filter !== "全部",
+    );
+    document.getElementById("favoriteCount").textContent =
+      Jusou.favorites().length;
+  }
+
+  function skeleton() {
+    grid.innerHTML = Array(8)
+      .fill(
+        '<div class="card-skeleton"><i></i><b></b><span></span></div>',
+      )
+      .join("");
+  }
+
+  function toast(message) {
+    var element = document.getElementById("toast");
+    element.textContent = message;
+    element.classList.add("show");
+    clearTimeout(element.hideTimer);
+    element.hideTimer = setTimeout(function () {
+      element.classList.remove("show");
+    }, 1800);
+  }
+
+  function busy(value) {
+    state.busy = value;
+    more.disabled = value;
+    more.textContent = value ? "加载中…" : "加载更多";
+  }
+
+  function renderFeature(featured) {
+    var deck = state.items.slice(0, 6);
+    var slides = deck
+      .map(function (movie, index) {
+        return (
+          '<article class="deck-slide" data-id="' +
+          esc(movie.id) +
+          '">' +
+          '<div class="deck-layer-stack" aria-hidden="true"><i></i><i></i><i></i></div>' +
+          '<div class="deck-art">' +
+          poster(movie, index === 0) +
+          '<div class="deck-art-hud"><span>NODE 0' +
+          (index + 1) +
+          "</span><b>" +
+          esc(movie.remarks || "在线") +
+          "</b></div></div>" +
+          '<div class="deck-glass"><div><span>0' +
+          (index + 1) +
+          " · " +
+          esc(movie.type) +
+          "</span><b>" +
+          (movie.score ? Number(movie.score).toFixed(1) : "NEW") +
+          "</b></div><h2>" +
+          esc(movie.name) +
+          "</h2><p>" +
+          esc(movie.year) +
+          " · " +
+          esc(movie.area) +
+          '</p><button data-play="' +
+          esc(movie.id) +
+          '" data-icon="play">立即播放</button></div></article>'
+        );
+      })
+      .join("");
+    var dots = deck
+      .map(function (_, index) {
+        return '<i class="' + (index === 0 ? "active" : "") + '"></i>';
+      })
+      .join("");
+
+    document.getElementById("heroFeature").innerHTML =
+      '<div class="feature-console">' +
+      '<div class="console-rail console-left" aria-hidden="true">' +
+      '<div><span>内容节点</span><b>' +
+      state.total.toLocaleString("zh-CN") +
+      '</b><small>实时片库</small></div>' +
+      '<div><span>播放协议</span><b>HLS</b><small>自适应码率</small></div>' +
+      "</div>" +
+      '<div class="feature-orbit" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
+      '<div class="feature-poster">' +
+      poster(featured, true) +
+      '<span class="poster-node">LIVE // 0.31</span></div>' +
+      '<div class="feature-info"><div><span>今日推荐 · ' +
+      esc(featured.type) +
+      "</span><strong>" +
+      (featured.score ? Number(featured.score).toFixed(1) : "NEW") +
+      "</strong></div><h2>" +
+      esc(featured.name) +
+      "</h2><p>" +
+      esc(featured.intro || featured.type) +
+      '</p><div class="feature-progress"><span style="width:' +
+      (featured.score ? Math.min(100, Number(featured.score) * 10) : 86) +
+      '%"></span></div><button data-play="' +
+      esc(featured.id) +
+      '" data-icon="play">播放第一集</button></div>' +
+      '<div class="console-rail console-right" aria-hidden="true">' +
+      '<div><span>信号质量</span><b>98%</b><small>低延迟链路</small></div>' +
+      '<div><span>今日上新</span><b>20+</b><small>持续同步</small></div>' +
+      "</div></div>" +
+      '<div class="mobile-deck-wrap"><div class="deck-top"><span id="deckReadout">NODE 01 / 0' +
+      deck.length +
+      '</span><b>左右滑动 · SWIPE</b></div><div class="mobile-deck" id="mobileDeck">' +
+      slides +
+      '</div><div class="deck-dots" id="deckDots">' +
+      dots +
+      "</div></div>";
+    setupSwipe(deck.length);
+  }
+
+  function setupSwipe(count) {
+    var deck = document.getElementById("mobileDeck");
+    if (!deck) return;
+    var slides = Array.prototype.slice.call(
+      deck.querySelectorAll(".deck-slide"),
+    );
+    var dots = Array.prototype.slice.call(
+      document.querySelectorAll("#deckDots i"),
+    );
+    var readout = document.getElementById("deckReadout");
+    var lastIndex = -1;
+    var ticking = false;
+
+    function update() {
+      var deckRect = deck.getBoundingClientRect();
+      var center = deckRect.left + deckRect.width / 2;
+      var activeIndex = 0;
+      var closest = Infinity;
+      slides.forEach(function (slide, index) {
+        var rect = slide.getBoundingClientRect();
+        var distance = (rect.left + rect.width / 2 - center) / rect.width;
+        var clamped = Math.max(-1, Math.min(1, distance));
+        slide.style.setProperty("--swipe-x", clamped.toFixed(3));
+        slide.style.setProperty(
+          "--swipe-abs",
+          Math.abs(clamped).toFixed(3),
+        );
+        if (Math.abs(distance) < closest) {
+          closest = Math.abs(distance);
+          activeIndex = index;
+        }
+      });
+      slides.forEach(function (slide, index) {
+        slide.classList.toggle("active", index === activeIndex);
+      });
+      dots.forEach(function (dot, index) {
+        dot.classList.toggle("active", index === activeIndex);
+      });
+      if (readout)
+        readout.textContent =
+          "NODE " +
+          String(activeIndex + 1).padStart(2, "0") +
+          " / " +
+          String(count).padStart(2, "0");
+      if (
+        lastIndex >= 0 &&
+        activeIndex !== lastIndex &&
+        navigator.vibrate
+      )
+        navigator.vibrate(8);
+      lastIndex = activeIndex;
+      ticking = false;
+    }
+
+    deck.addEventListener(
+      "scroll",
+      function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(update);
+      },
+      { passive: true },
+    );
+    window.addEventListener("resize", update, { passive: true });
+    update();
+  }
+
+  async function initial() {
+    skeleton();
+    busy(true);
+    try {
+      var response = await Jusou.home();
+      state.items = response.list || [];
+      state.total = response.total || state.items.length;
+      render();
+      if (state.items[0]) renderFeature(state.items[0]);
+      document.getElementById("rankingGrid").innerHTML = state.items
+        .slice(0, 5)
+        .map(function (movie, index) {
+          return (
+            '<button class="rank-card" data-id="' +
+            esc(movie.id) +
+            '" data-icon="trend"><b>0' +
+            (index + 1) +
+            "</b>" +
+            poster(movie) +
+            "<span><strong>" +
+            esc(movie.name) +
+            "</strong><small>" +
+            esc(movie.type) +
+            " · " +
+            esc(movie.remarks) +
+            "</small></span></button>"
+          );
+        })
+        .join("");
+      var history = Jusou.history();
+      if (history[0]) {
+        document.getElementById("continueSection").classList.remove("hidden");
+        document.getElementById("continueTitle").textContent =
+          history[0].name + " · 第" + ((history[0].episode || 0) + 1) + "集";
+        document.getElementById("continueButton").onclick = function () {
+          Jusou.openPlayer(
+            history[0].id,
+            history[0].episode,
+            document.getElementById("continueSection"),
+          );
+        };
+      }
+      if (response.offline) toast("内容服务暂不可用，已展示精选内容");
+    } catch (error) {
+      state.items = [];
+      render();
+      toast(error.message || "内容加载失败");
+    }
+    busy(false);
+  }
+
+  async function search(keyword) {
+    keyword = keyword.trim();
+    if (!keyword) return clear();
+    state.query = keyword;
+    state.filter = "全部";
+    skeleton();
+    busy(true);
+    document.getElementById("resultTitle").textContent =
+      "“" + keyword + "”的搜索结果";
+    document.getElementById("clearSearch").classList.remove("hidden");
+    try {
+      var response = await Jusou.search(keyword);
+      state.items = response.list || [];
+      state.total = state.items.length;
+      render();
+    } catch (error) {
+      state.items = [];
+      render();
+      toast(error.message || "搜索失败");
+    }
+    busy(false);
+  }
+
+  async function clear() {
+    state.query = "";
+    state.filter = "全部";
+    state.page = 1;
+    document.getElementById("searchInput").value = "";
+    document.getElementById("resultTitle").textContent = "正在热播";
+    document.getElementById("clearSearch").classList.add("hidden");
+    document.querySelectorAll("#filters button").forEach(function (button) {
+      button.classList.toggle("active", button.dataset.filter === "全部");
+    });
+    await initial();
+  }
+
+  document.addEventListener("click", function (event) {
+    var favorite = event.target.closest("[data-favorite]");
+    if (favorite) {
+      event.stopPropagation();
+      var movie = state.items.find(function (item) {
+        return String(item.id) === favorite.dataset.favorite;
+      });
+      if (movie) {
+        var active = Jusou.toggleFavorite(movie);
+        toast(active ? "已加入我的片单" : "已取消收藏");
+        render();
+      }
+      return;
+    }
+    var play = event.target.closest("[data-play]");
+    if (play) {
+      return Jusou.openPlayer(
+        play.dataset.play,
+        0,
+        play.closest(".movie-card,.deck-slide,.feature-console") || play,
+      );
+    }
+    var detail = event.target.closest("[data-id]");
+    if (detail)
+      return Jusou.openDetail(detail.dataset.id, detail);
+    var quickQuery = event.target.closest("[data-query]");
+    if (quickQuery) {
+      document.getElementById("searchInput").value =
+        quickQuery.dataset.query;
+      search(quickQuery.dataset.query);
+    }
+  });
+
+  grid.addEventListener("keydown", function (event) {
+    if (
+      (event.key === "Enter" || event.key === " ") &&
+      event.target.classList.contains("movie-card")
+    )
+      Jusou.openDetail(event.target.dataset.id, event.target);
+  });
+  document
+    .getElementById("searchForm")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+      search(document.getElementById("searchInput").value);
+    });
+  document.getElementById("clearSearch").onclick = clear;
+  document.getElementById("filters").onclick = function (event) {
+    var button = event.target.closest("[data-filter]");
+    if (!button) return;
+    state.filter = button.dataset.filter;
+    this.querySelectorAll("button").forEach(function (item) {
+      item.classList.toggle("active", item === button);
+    });
+    document.getElementById("resultTitle").textContent =
+      state.filter === "全部" ? "正在热播" : state.filter + "短剧";
+    render();
+  };
+  more.onclick = async function () {
+    if (state.busy) return;
+    busy(true);
+    try {
+      var response = await Jusou.list(++state.page);
+      state.items = state.items.concat(response.list || []);
+      state.total = response.total || state.total;
+      render();
+    } catch (_error) {
+      state.page--;
+      toast("加载失败，请稍后重试");
+    }
+    busy(false);
+  };
+
+  initial();
+})();
