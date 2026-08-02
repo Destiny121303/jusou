@@ -59,6 +59,24 @@
     card.style.setProperty("--mx", ((event.clientX - rect.left) / rect.width * 100) + "%");
     card.style.setProperty("--my", ((event.clientY - rect.top) / rect.height * 100) + "%");
   }, { passive: true });
+  var extraPalettes = [
+    ["nebula", "星云钛紫", "#a78bfa", "#22d3ee"],
+    ["graphite", "石墨银焰", "#e2e8f0", "#64748b"],
+    ["aurora", "极光青金", "#34d399", "#fbbf24"]
+  ];
+  var paletteGrid = document.querySelector(".palette-grid");
+  if (paletteGrid) {
+    extraPalettes.forEach(function (item) {
+      if (paletteGrid.querySelector('[data-palette="' + item[0] + '"]')) return;
+      var button = document.createElement("button");
+      button.type = "button";
+      button.dataset.palette = item[0];
+      button.style.setProperty("--c1", item[2]);
+      button.style.setProperty("--c2", item[3]);
+      button.innerHTML = '<i></i><span>' + item[1] + '</span>';
+      paletteGrid.appendChild(button);
+    });
+  }
   document.addEventListener("click", function (event) {
     var install = event.target.closest("[data-install]"); if (install) window.JusouInstall();
     var interactive = event.target.closest("button,.primary-button,.secondary-button,.profile-button,.mobile-nav a,.bento-card,.movie-card");
