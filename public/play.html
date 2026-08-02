@@ -8,8 +8,8 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg">
   <link rel="preconnect" href="https://v.gsuus.com" crossorigin>
-  <link rel="stylesheet" href="./assets/css/style.css?v=8">
-  <link rel="stylesheet" href="./assets/css/product.css?v=8">
+  <link rel="stylesheet" href="./assets/css/style.css?v=10">
+  <link rel="stylesheet" href="./assets/css/product.css?v=10">
 </head>
 <body class="player-page">
   <header class="site-header">
@@ -22,6 +22,12 @@
       <div class="stage-aperture" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="player-ambient" id="ambient" aria-hidden="true"></div>
       <video id="video" controls playsinline webkit-playsinline preload="auto"></video>
+      <div class="player-toolbox">
+        <div class="quality-control"><button id="qualityToggle" type="button" aria-label="选择画质"><span>QUALITY</span><b id="qualityLabel">自动</b></button><div class="quality-menu" id="qualityMenu"><span>画质由片源决定</span></div></div>
+        <button id="enhanceToggle" type="button" aria-label="切换画质增强"><span>AI ENHANCE</span><b>关闭</b></button>
+        <button id="fitToggle" type="button" aria-label="切换画面比例"><span>FRAME</span><b>完整</b></button>
+        <button id="fullscreenToggle" type="button" aria-label="全屏播放"><span>VIEW</span><b>全屏</b></button>
+      </div>
       <div class="player-hud" aria-hidden="true">
         <i class="hud-corner tl"></i><i class="hud-corner tr"></i><i class="hud-corner bl"></i><i class="hud-corner br"></i>
         <div class="hud-top"><span class="hud-pill"><i></i><b id="hudStatus">SOURCE LINK</b></span><span class="hud-pill" id="hudEpisode">EP --</span></div>
@@ -38,11 +44,11 @@
       <div class="episode-list" id="episodes"></div>
     </section>
   </main>
-  <script src="./assets/js/hls.min.js?v=8"></script>
-  <script src="./assets/js/data.js?v=8"></script>
-  <script src="./assets/js/ui.js?v=8"></script>
-  <script src="./assets/js/shell.js?v=8"></script>
-  <script src="./assets/js/membership.js?v=8"></script>
+  <script src="./assets/js/hls.min.js?v=10"></script>
+  <script src="./assets/js/data.js?v=10"></script>
+  <script src="./assets/js/ui.js?v=10"></script>
+  <script src="./assets/js/shell.js?v=10"></script>
+  <script src="./assets/js/membership.js?v=10"></script>
   <script>
   (async function () {
     var query = new URLSearchParams(location.search);
@@ -113,6 +119,7 @@
       if (hls) {
         hls.destroy();
         hls = null;
+        window.JusouHls = null;
       }
 
       if (
@@ -136,9 +143,13 @@
           startFragPrefetch: true,
           capLevelToPlayerSize: true
         });
+        window.JusouHls = hls;
         hls.loadSource(episode.url);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, ready);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          window.dispatchEvent(new CustomEvent("jusou:levels", { detail: { hls: hls, levels: hls.levels || [] } }));
+          ready();
+        });
         hls.on(Hls.Events.ERROR, function (_event, data) {
           fatalError(data);
         });
@@ -218,5 +229,6 @@
     }
   })();
   </script>
+  <script src="./assets/js/player-pro.js?v=10"></script>
 </body>
 </html>
