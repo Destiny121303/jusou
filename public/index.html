@@ -10,8 +10,13 @@
   <link rel="icon" href="./favicon.svg">
   <link rel="stylesheet" href="./assets/css/style.css?v=11">
   <link rel="stylesheet" href="./assets/css/product.css?v=11">
+  <link rel="stylesheet" href="./assets/css/launch.css?v=1">
 </head>
 <body>
+  <section class="launch-screen" id="launchScreen" aria-label="剧搜启动界面" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="launch-grid" aria-hidden="true"></div><div class="launch-orbit" aria-hidden="true"></div><div class="launch-beam" aria-hidden="true"></div>
+    <div class="launch-card"><div class="launch-chip"><i></i> JUSOU // NETWORK READY</div><div class="launch-logo">剧搜</div><p class="launch-subtitle">好剧，马上看</p><div class="launch-rule"></div><div class="launch-meta"><span>INITIALIZING</span><span>V4.0 / ONLINE</span></div><div class="launch-progress" aria-label="加载进度"><span></span></div><button class="launch-enter" type="button">进入剧搜　→</button><p class="launch-hint">正在连接热播内容网络 · 点击立即进入</p></div>
+  </section>
   <a class="skip-link" href="#content">跳到主要内容</a>
   <header class="site-header">
     <a class="brand" href="./index.html" aria-label="剧搜首页"><span class="brand-mark">剧</span><span>剧搜</span></a>
@@ -39,6 +44,6 @@
   </main>
   <nav class="mobile-nav" aria-label="移动导航"><a class="active" href="./index.html" data-icon="home"><span>首页</span></a><a href="./explore.html" data-icon="search"><span>分类</span></a><a href="./membership.html" data-icon="crown"><span>会员</span></a><a href="./app.html" data-icon="rocket"><span>App</span></a><a href="./user.html" data-icon="user"><span>我的</span></a></nav>
   <div class="toast" id="toast" role="status"></div>
-  <script src="./assets/js/data.js?v=11"></script><script src="./assets/js/ui.js?v=11"></script><script src="./assets/js/shell.js?v=11"></script><script src="./assets/js/app.js?v=11"></script>
+  <script src="./assets/js/data.js?v=11"></script><script src="./assets/js/ui.js?v=11"></script><script src="./assets/js/shell.js?v=11"></script><script src="./assets/js/app.js?v=11"></script><script src="./assets/js/launch.js?v=1"></script>
 </body>
 </html>
