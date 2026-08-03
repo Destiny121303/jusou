@@ -139,6 +139,23 @@ button:active,.profile-button:active,.mobile-nav a:active{transform:scale(.96)}
 @keyframes deck-float{50%{transform:translateY(-5px);filter:blur(38px)}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 
+/* Centered responsive composition: keep the mobile experience balanced while
+   preserving the horizontal swipe rails for content cards. */
+@media(max-width:700px){
+  main{width:100%;overflow:hidden}
+  .hero{width:100%;margin-inline:auto;text-align:center}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .hero-subtitle{margin-inline:auto}
+  .hero-search{width:100%;max-width:520px;margin-inline:auto}
+  .quick-tags{justify-content:center}
+  .quick-tags>span{width:auto}
+  .mobile-metrics{width:100%;max-width:520px;margin-inline:auto}
+  .content-section,.ranking-section{width:100%;margin-inline:auto}
+  .section-head{justify-content:center;text-align:center}
+  .section-head>div{width:100%}
+  .section-head .text-button{position:absolute;right:18px}
+}
+
 /* Spatial console: data surrounds the artwork, never covers it */
 .feature-console{position:relative;height:100%;display:grid;grid-template-columns:74px minmax(210px,1fr) 184px;gap:14px;align-items:center;isolation:isolate}
 .site-header .profile-button:before{content:none}
